@@ -1,7 +1,8 @@
 from slack_bolt import App
 from slack_bolt.adapter.flask import SlackRequestHandler
-from flask import Flask, request
+from flask import Flask, request, jsonify
 import re
+import asyncio
 
 from src.env import get_env
 from src.article import get_article_content, summarize_article
@@ -30,7 +31,7 @@ def handle_app_mention(event, say):
             say(text=f"Error: {content}", thread_ts=thread_ts)
             return
 
-        summary = summarize_article(content)
+        summary = asyncio.run(summarize_article(content))
 
         say(text=f"Here is the summarized content:\n{summary}", thread_ts=thread_ts)
     else:
@@ -48,6 +49,17 @@ handler = SlackRequestHandler(app)
 @flask_app.route("/slack/events", methods=["POST"])
 def slack_events():
     return handler.handle(request)
+
+
+@flask_app.route("/summarize", methods=["POST"])
+def summarize_endpoint():
+    data = request.get_json()
+    if "article" not in data:
+        return jsonify({"error": "Article content is required"}), 400
+
+    article = data["article"]
+    summary = asyncio.run(summarize_article(article))
+    return jsonify({"summary": summary})
 
 
 if __name__ == "__main__":

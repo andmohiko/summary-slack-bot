@@ -2,11 +2,11 @@ import requests
 from bs4 import BeautifulSoup
 import time
 import logging
-from openai import OpenAI
+from openai import AsyncOpenAI
 
 from src.env import get_env
 
-client = OpenAI(api_key=get_env("OPENAI_API_KEY"))
+client = AsyncOpenAI(api_key=get_env("OPENAI_API_KEY"))
 
 
 # URLのタイトルを取得する関数
@@ -58,7 +58,7 @@ def get_article_content(url):
 
 
 # OpenAI APIを使って記事を要約する関数
-def summarize_article(article):
+async def summarize_article(article):
     prompt = f"""あなたは、要約のスペシャリストです。
 下に示す記事を要約してください。なお、長くても500文字以内に収めてください。
 要約した内容は、次の書式設定を効果的に使い、見やすい形でまとめてください。
@@ -73,7 +73,7 @@ def summarize_article(article):
 ----------------------------------------
 """
     try:
-        response = client.chat.completions.create(
+        response = await client.chat.completions.create(
             model="gpt-4o",
             messages=[
                 {"role": "system", "content": "あなたは有能な記事要約者です。"},
@@ -82,7 +82,8 @@ def summarize_article(article):
             max_tokens=700,
             temperature=0.7,
         )
-        summary = response["choices"][0]["message"]["content"]
+        response_dict = response.model_dump()
+        summary = response_dict["choices"][0]["message"]["content"]
         return summary
     except Exception as e:
         logging.warning(f"OpenAI API error: {e}")
