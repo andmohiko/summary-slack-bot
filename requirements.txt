@@ -2,3 +2,4 @@ slack-bolt
 flask
 requests
 beautifulsoup4
+gunicorn
