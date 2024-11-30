@@ -4,7 +4,7 @@ from flask import Flask, request
 import requests
 from bs4 import BeautifulSoup
 
-from env import get_env
+from src.env import get_env
 
 SLACK_BOT_TOKEN = get_env("SLACK_BOT_TOKEN")
 SLACK_SIGNING_SECRET = get_env("SLACK_SIGNING_SECRET")
