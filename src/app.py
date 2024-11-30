@@ -4,7 +4,7 @@ from flask import Flask, request
 import re
 
 from src.env import get_env
-from src.article import get_article_content
+from src.article import get_article_content, summarize_article
 
 SLACK_BOT_TOKEN = get_env("SLACK_BOT_TOKEN")
 SLACK_SIGNING_SECRET = get_env("SLACK_SIGNING_SECRET")
@@ -26,15 +26,13 @@ def handle_app_mention(event, say):
     if match:
         url = match.group(1)  # URL部分を抽出
         content = get_article_content(url)
-        preview_length = 500  # プレビューとして返す文字数
-        preview = content[:preview_length] + (
-            "..." if len(content) > preview_length else ""
-        )
+        if content.startswith("Failed"):
+            say(text=f"Error: {content}", thread_ts=thread_ts)
+            return
 
-        say(
-            text=f"Here's the content preview for the URL:\n{preview}",
-            thread_ts=thread_ts,  # スレッドタイムスタンプを指定
-        )
+        summary = summarize_article(content)
+
+        say(text=f"Here is the summarized content:\n{summary}", thread_ts=thread_ts)
     else:
         say(
             text="Please provide a valid URL.",

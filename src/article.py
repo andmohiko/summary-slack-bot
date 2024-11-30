@@ -2,6 +2,11 @@ import requests
 from bs4 import BeautifulSoup
 import time
 import logging
+import openai
+
+from src.env import get_env
+
+openai.api_key = get_env("OPENAI_API_KEY")
 
 
 # URLのタイトルを取得する関数
@@ -50,3 +55,35 @@ def get_article_content(url):
     except requests.exceptions.RequestException as e:
         logging.warning(f"Error fetching URL {url}: {e}")
         return f"Failed to fetch content from {url}. Please check the URL."
+
+
+# OpenAI APIを使って記事を要約する関数
+def summarize_article(article):
+    prompt = f"""あなたは、要約のスペシャリストです。
+下に示す記事を要約してください。なお、長くても500文字以内に収めてください。
+要約した内容は、次の書式設定を効果的に使い、見やすい形でまとめてください。
+太字: 半角スペース*太字*半角スペース
+番号付きリスト: 1. アイテム1\n2. アイテム2
+箇条書きリスト: • アイテム1\n• アイテム2
+引用: > 引用文
+
+記事内容はこちら
+----------------------------------------
+{article}
+----------------------------------------
+"""
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",  # 使用するモデル
+            messages=[
+                {"role": "system", "content": "あなたは有能な記事要約者です。"},
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=700,  # トークン数制限
+            temperature=0.7,  # 応答の多様性
+        )
+        summary = response["choices"][0]["message"]["content"]
+        return summary
+    except Exception as e:
+        logging.warning(f"OpenAI API error: {e}")
+        return "Failed to generate a summary using OpenAI."
