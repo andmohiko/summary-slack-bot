@@ -2,11 +2,11 @@ import requests
 from bs4 import BeautifulSoup
 import time
 import logging
-import openai
+from openai import OpenAI
 
 from src.env import get_env
 
-openai.api_key = get_env("OPENAI_API_KEY")
+client = OpenAI(api_key=get_env("OPENAI_API_KEY"))
 
 
 # URLのタイトルを取得する関数
@@ -73,8 +73,8 @@ def summarize_article(article):
 ----------------------------------------
 """
     try:
-        response = openai.Chat.create(
-            model="gpt-4",  # ここを gpt-4 に変更
+        response = client.chat.completions.create(
+            model="gpt-4o",
             messages=[
                 {"role": "system", "content": "あなたは有能な記事要約者です。"},
                 {"role": "user", "content": prompt},
@@ -83,7 +83,6 @@ def summarize_article(article):
             temperature=0.7,
         )
         summary = response["choices"][0]["message"]["content"]
-        return summary
         return summary
     except Exception as e:
         logging.warning(f"OpenAI API error: {e}")
