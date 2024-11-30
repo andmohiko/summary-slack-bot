@@ -4,8 +4,13 @@ from flask import Flask, request
 import requests
 from bs4 import BeautifulSoup
 
+from env import get_env
+
+SLACK_BOT_TOKEN = get_env("SLACK_BOT_TOKEN")
+SLACK_SIGNING_SECRET = get_env("SLACK_SIGNING_SECRET")
+
 # Slack Appの初期化
-app = App(token="xoxb-your-slack-bot-token", signing_secret="your-signing-secret")
+app = App(token=SLACK_BOT_TOKEN, signing_secret=SLACK_SIGNING_SECRET)
 
 
 # URLのタイトルを取得する関数
