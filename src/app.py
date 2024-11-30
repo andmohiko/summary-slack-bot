@@ -32,7 +32,7 @@ def get_page_title(url):
 @app.event("app_mention")
 def handle_app_mention(event, say):
     text = event["text"]
-    user = event["user"]
+    thread_ts = event.get("thread_ts", event["ts"])
 
     # SlackのURL形式（例: <https://example.com>）を処理する正規表現
     url_pattern = r"<(https?://[^>]+)>"
@@ -41,9 +41,15 @@ def handle_app_mention(event, say):
     if match:
         url = match.group(1)  # URL部分を抽出
         title = get_page_title(url)
-        say(f"<@{user}> The title of the page is: {title}")
+        say(
+            text=f"The title of the page is: {title}",
+            thread_ts=thread_ts,  # スレッドタイムスタンプを指定
+        )
     else:
-        say(f"<@{user}> Please provide a valid URL.")
+        say(
+            text="Please provide a valid URL.",
+            thread_ts=thread_ts,  # スレッドタイムスタンプを指定
+        )
 
 
 # Flaskアプリの設定
