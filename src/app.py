@@ -21,44 +21,43 @@ def handle_app_mention(event, say, client):
     thread_ts = event.get("thread_ts", event["ts"])
     channel = event["channel"]
 
-    # スレッド内でのメンションかどうかをチェック
-    if thread_ts != event["ts"]:
-        # スレッドの親メッセージを取得
-        try:
-            response = client.conversations_replies(channel=channel, ts=thread_ts)
-            if response["ok"] and len(response["messages"]) > 0:
-                parent_message = response["messages"][0]["text"]
-                url_pattern = r"<(https?://[^>]+)>"
-                match = re.search(url_pattern, parent_message)
-
-                if match:
-                    url = match.group(1)  # URL部分を抽出
-                    content = get_article_content(url)
-                    if content.startswith("Failed"):
-                        say(text=f"Error: {content}", thread_ts=thread_ts)
-                        return
-
-                    summary = asyncio.run(summarize_article(content))
-
-                    say(
-                        text=f"Here is the summarized content:{summary}",
-                        thread_ts=thread_ts,
-                    )
-                else:
-                    say(
-                        text="Parent message does not contain a valid URL.",
-                        thread_ts=thread_ts,
-                    )
-            else:
-                say(text="Failed to retrieve the parent message.", thread_ts=thread_ts)
-        except Exception as e:
-            logging.warning(f"Slack API error: {e}")
-            say(text=f"Error: {str(e)}", thread_ts=thread_ts)
-    else:
+    # 異常系は早期リターン
+    if thread_ts == event["ts"]:
         say(
-            text="Please provide a valid URL or mention me in a thread containing a URL.",
+            text="Please provide a valid URL or mention me in a thread that contains a URL.",
             thread_ts=thread_ts,  # スレッドタイムスタンプを指定
         )
+        return
+
+    # スレッドの親メッセージを取得
+    try:
+        response = client.conversations_replies(channel=channel, ts=thread_ts)
+        if not response["ok"] or len(response["messages"]) == 0:
+            say(text="Failed to retrieve the parent message.", thread_ts=thread_ts)
+            return
+
+        parent_message = response["messages"][0]["text"]
+        url_pattern = r"<(https?://[^>]+)>"
+        match = re.search(url_pattern, parent_message)
+
+        if not match:
+            say(
+                text="Parent message does not contain a valid URL.",
+                thread_ts=thread_ts,
+            )
+            return
+
+        url = match.group(1)  # URL部分を抽出
+        content = get_article_content(url)
+        if content.startswith("Failed"):
+            say(text=f"Error: {content}", thread_ts=thread_ts)
+            return
+
+        summary = asyncio.run(summarize_article(content))
+        say(text=f"{summary}", thread_ts=thread_ts)
+    except Exception as e:
+        logging.warning(f"Slack API error: {e}")
+        say(text=f"Error: {str(e)}", thread_ts=thread_ts)
 
 
 # Flaskアプリの設定
