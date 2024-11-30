@@ -2,6 +2,7 @@ from slack_bolt import App
 from slack_bolt.adapter.flask import SlackRequestHandler
 from flask import Flask, request
 import requests
+import re
 from bs4 import BeautifulSoup
 
 from src.env import get_env
@@ -33,11 +34,12 @@ def handle_app_mention(event, say):
     text = event["text"]
     user = event["user"]
 
-    # テキスト内のURLを抽出
-    words = text.split()
-    url = next((word for word in words if word.startswith("http")), None)
+    # SlackのURL形式（例: <https://example.com>）を処理する正規表現
+    url_pattern = r"<(https?://[^>]+)>"
+    match = re.search(url_pattern, text)
 
-    if url:
+    if match:
+        url = match.group(1)  # URL部分を抽出
         title = get_page_title(url)
         say(f"<@{user}> The title of the page is: {title}")
     else:
