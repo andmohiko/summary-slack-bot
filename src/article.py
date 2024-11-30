@@ -73,16 +73,17 @@ def summarize_article(article):
 ----------------------------------------
 """
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",  # 使用するモデル
+        response = openai.Chat.create(
+            model="gpt-4",  # ここを gpt-4 に変更
             messages=[
                 {"role": "system", "content": "あなたは有能な記事要約者です。"},
                 {"role": "user", "content": prompt},
             ],
-            max_tokens=700,  # トークン数制限
-            temperature=0.7,  # 応答の多様性
+            max_tokens=700,
+            temperature=0.7,
         )
         summary = response["choices"][0]["message"]["content"]
+        return summary
         return summary
     except Exception as e:
         logging.warning(f"OpenAI API error: {e}")
